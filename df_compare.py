@@ -142,10 +142,34 @@ def df_comp(df1,df2,id1=None,id2=None):
 
 
 def num_comp_plot(n1,n2):
+	"""Create ecdf plot comparing two numeric series distributions
+	"""
+    fig = plt.figure()
+    plt.plot(np.sort(n1), np.linspace(0, 1, len(n1), endpoint=False))
+    plt.plot(np.sort(n2), np.linspace(0, 1, len(n2), endpoint=False))
+    return fig
 
 
-	return plot
-
+def cat_comp_plot(c1,c2):
+	"""Create bar chart comparing two categorical series distributions
+	"""
+    vc1 = c1.value_counts(normalize=True,dropna=False)
+    vc2 = c2.value_counts(normalize=True,dropna=False)
+    df = pd.concat([vc1,vc2],axis=1).reset_index()
+    df.columns = ['value','c1','c2']
+    df['value'].fillna('NAN',inplace=True)
+    df['c1'].fillna(0,inplace=True)
+    df['c1'].fillna(0,inplace=True)
+    df['sort'] = df['c1'] + df['c2']
+    df.sort_values('sort',inplace=True)
+    df.reset_index(inplace=True,drop=True)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.barh(df.index,df['c1'],.3,color='b',align='center')
+    ax.barh(df.index+.3,df['c2'],.3,color='r',align='center')
+    ax.set_yticks(df.index)
+    ax.set_yticklabels(df['value'], rotation=40, ha='right')
+    return fig
 
 
 def chisq(base,compare):
