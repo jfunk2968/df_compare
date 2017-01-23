@@ -5,74 +5,36 @@ from scipy.stats import chisquare
 from scipy.stats import ks_2samp
 
 
-def df_comp(df1,df2,id1=None,id2=None):
+def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 	"""Compares 2 pandas dataframes for differences
 	"""
-	# Compare variable sets
 
+	# Compare variable sets
 	a = set(df1.columns)
 	b = set(df2.columns)
-
-	print "-------------------------------------------------------------------"
-	print 
-	print "VARIABLE OVERLAP COMPARISON"
-	print
-	print "# Columns in df1 only   :",len(a.difference(b))
-	print 
-	print pd.DataFrame(list(a.difference(b)),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
-	print 
-	print "# Columns in df2 only   :",len(b.difference(a))
-	print
-	print pd.DataFrame(list(b.difference(a)),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
-	print 
-
-	cols = a.intersection(b)
-
-	print "# Columns in both       :",len(cols)
-	print 
-	print pd.DataFrame(list(cols),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
-	print
-
+	cols = {}
+	cols['a_only'] = a.difference(b)
+	cols['b_only'] = b.difference(a)
+	cols['both'] = a.intersection(b)
 
 	# Compare data types for overlapping attributes
-
-	print "-------------------------------------------------------------------"
-	print 
-	print "VARIABLE DATA TYPE COMPARISON (for common variables)"
-	print
-
 	t = pd.concat([df1.dtypes[cols],df2.dtypes[cols]],axis=1)
 	t.columns = ['df1_type','df2_type']
 	t['diff'] = t['df1_type'] != t['df2_type']
 
-	print sum(t['diff'])," Common variables have different data types"
-	print
-
-	if sum(t['diff'])>0:
-		print "Variables with different types:"
-		print 
-		print t[['df1_type','df2_type']].loc[t['diff']==True]
-		print
-
 	# Optionaly compare id variables
-
-	if ((id1!=None) or (id2!=None)):
-		if ((id1!=None) and (id2!=None)):
-			print "-------------------------------------------------------------------"
-			print 
-			print "OPTIONAL ID VARIABLE COMPARISON"
-			print
-			compare(df1[id1],df2[id2])
-			print
-		else:
-			print "-------------------------------------------------------------------"
-			print 
-			print "WARNING - only one ID variale ... comparison not run "
-			print
+	if ((id1!=None) and (id2!=None)):
+		s_id1 = set(df1[id1])
+		s_id2 = set(df2[id2])
+		ids = {}
+		ids['id1_uniq'] = len(s_id1)==len(df1[id1])
+		ids['id2_uniq'] = len(s_id2)==len(df2[id2])
+		ids['id1_only'] = len(s_id1.difference(s_id1))
+		ids['id2_only'] = len(s_id2.difference(s_id2))
+		ids['both'] = len(s_id1.intersection(s_id2))
 
 
 	# Build summary metric df for Categorical variables
-
 	c_vars = t.loc[((t['diff']==False) & (t['df1_type']=='object'))]	
 	cstats = pd.DataFrame(list(c_vars.index),columns=['variable'])
 
@@ -84,21 +46,8 @@ def df_comp(df1,df2,id1=None,id2=None):
 
 	cstats['chisq_pval'] = cstats['variable'].apply(lambda x: chisq(df1[x],df2[x]))
 
-	print "-------------------------------------------------------------------"
-	print 
-	print "CATEGORICAL VARIABLE COMPARISON STATS (top 25 vars)"
-	print
-
-	if len(cstats)<25:
-		c_rows_print=len(cstats)
-	else:
-		c_rows_print=25
-
-	print cstats[['variable','chisq_pval']].sort_values('chisq_pval').reset_index(drop=True)[0:c_rows_print]
-
 
 	# Build summary metric df for Numerical variables	
-
 	n_vars = t.loc[((t['diff']==False) & (t['df1_type']!='object'))]	
 	nstats = pd.DataFrame(list(n_vars.index),columns=['variable'])
 
@@ -117,24 +66,85 @@ def df_comp(df1,df2,id1=None,id2=None):
 	nstats['max_df1'] = nstats['variable'].apply(lambda x: max(df1[x]))
 	nstats['max_df2'] = nstats['variable'].apply(lambda x: max(df2[x]))
 
-
-	# calculate a non-parametric distributional test score to rank magnitude of differences (KS Stat)
-
 	nstats['ks_pval'] = nstats['variable'].apply(lambda x: ks_2samp(df1[x],df2[x])[1])
 
-	print "-------------------------------------------------------------------"
-	print 
-	print "NUMERICAL VARIABLE COMPARISON STATS (top 25 vars)"
-	print
 
-	if len(nstats)<25:
-		n_rows_print=len(nstats)
-	else:
-		n_rows_print=25
+	if verbose>0:
+		print "-------------------------------------------------------------------"
+		print 
+		print "VARIABLE OVERLAP COMPARISON"
+		print
+		print "# Columns in df1 only   :",len(cols['a_only'])
+		print 
+		print pd.DataFrame(list(cols['a_only']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
+		print 
+		print "# Columns in df2 only   :",len(cols['b_only'])
+		print
+		print pd.DataFrame(list(cols['b_only']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
+		print 
+		print "# Columns in both       :",len(cols['both'])
+		print 
+		print pd.DataFrame(list(cols['both']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
+		print
+		print "-------------------------------------------------------------------"
+		print 
+		print "VARIABLE DATA TYPE COMPARISON (for common variables)"
+		print
+		print sum(t['diff'])," Common variables have different data types"
+		print
 
-	print nstats[['variable','ks_pval']].sort_values('ks_pval').reset_index(drop=True)[0:n_rows_print]
+		if sum(t['diff'])>0:
+			print "Variables with different types:"
+			print 
+			print t[['df1_type','df2_type']].loc[t['diff']==True]
+			print
 
-	return cstats, nstats
+		if ((id1!=None) or (id2!=None)):
+			if ((id1!=None) and (id2!=None)):
+				print "-------------------------------------------------------------------"
+				print 
+				print "OPTIONAL ID VARIABLE COMPARISON"
+				print
+				print "id1 Unique  : ", ids['id1_uniq']
+				print "id2 Unique  : ", ids['id2_uniq']
+				print "id1 Only    : ", ids['id1_only']
+				print "id2 Only    : ", ids['id2_only']
+				print "Both        : ", ids['both']
+				print
+			else:
+				print "-------------------------------------------------------------------"
+				print 
+				print "WARNING - only one ID variale ... comparison not run "
+				print
+
+
+		print "-------------------------------------------------------------------"
+		print 
+		print "CATEGORICAL VARIABLE COMPARISON STATS (top 25 vars)"
+		print
+
+		if len(cstats)<25:
+			c_rows_print=len(cstats)
+		else:
+			c_rows_print=25
+
+		print cstats[['variable','chisq_pval']].sort_values('chisq_pval').reset_index(drop=True)[0:c_rows_print]
+
+
+	
+		print "-------------------------------------------------------------------"
+		print 
+		print "NUMERICAL VARIABLE COMPARISON STATS (top 25 vars)"
+		print
+
+		if len(nstats)<25:
+			n_rows_print=len(nstats)
+		else:
+			n_rows_print=25
+
+		print nstats[['variable','ks_pval']].sort_values('ks_pval').reset_index(drop=True)[0:n_rows_print]
+
+	return {'columns': cols, 'ids': ids, 'char_stats': cstats, 'num_stats': nstats}
 
 
 #  add a print function for variable distribution comps ... one for num and on for cat
