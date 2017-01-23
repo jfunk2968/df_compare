@@ -18,20 +18,22 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 	cols['both'] = a.intersection(b)
 
 	# Compare data types for overlapping attributes
-	t = pd.concat([df1.dtypes[cols],df2.dtypes[cols]],axis=1)
+	t = pd.concat([df1.dtypes[cols['both']],df2.dtypes[cols['both']]],axis=1)
 	t.columns = ['df1_type','df2_type']
 	t['diff'] = t['df1_type'] != t['df2_type']
 
 	# Optionaly compare id variables
+	ids = {}
 	if ((id1!=None) and (id2!=None)):
 		s_id1 = set(df1[id1])
 		s_id2 = set(df2[id2])
-		ids = {}
 		ids['id1_uniq'] = len(s_id1)==len(df1[id1])
 		ids['id2_uniq'] = len(s_id2)==len(df2[id2])
 		ids['id1_only'] = len(s_id1.difference(s_id1))
 		ids['id2_only'] = len(s_id2.difference(s_id2))
 		ids['both'] = len(s_id1.intersection(s_id2))
+	else:
+		ids['status'] = 'id comp not executed'
 
 
 	# Build summary metric df for Categorical variables
@@ -69,6 +71,12 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 	nstats['ks_pval'] = nstats['variable'].apply(lambda x: ks_2samp(df1[x],df2[x])[1])
 
 
+	#cplots = {k: cat_comp_plot(df1[k], df2[k]) for k in t.loc[((t['diff']==False) & (t['df1_type']=='object'))].index}
+	nplots = {k: num_comp_plot(df1[k], df2[k]) for k in t.loc[((t['diff']==False) & (t['df1_type']!='object'))].index}
+
+
+
+	# optionaly print results
 	if verbose>0:
 		print "-------------------------------------------------------------------"
 		print 
@@ -76,15 +84,18 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 		print
 		print "# Columns in df1 only   :",len(cols['a_only'])
 		print 
-		print pd.DataFrame(list(cols['a_only']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
+		if len(cols['a_only'])>0:
+			print pd.DataFrame(list(cols['a_only']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
 		print 
 		print "# Columns in df2 only   :",len(cols['b_only'])
 		print
-		print pd.DataFrame(list(cols['b_only']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
+		if len(cols['b_only'])>0:
+			print pd.DataFrame(list(cols['b_only']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
 		print 
 		print "# Columns in both       :",len(cols['both'])
-		print 
-		print pd.DataFrame(list(cols['both']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
+		print
+		if len(cols['both'])>0:
+			print pd.DataFrame(list(cols['both']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
 		print
 		print "-------------------------------------------------------------------"
 		print 
@@ -92,13 +103,11 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 		print
 		print sum(t['diff'])," Common variables have different data types"
 		print
-
 		if sum(t['diff'])>0:
 			print "Variables with different types:"
 			print 
 			print t[['df1_type','df2_type']].loc[t['diff']==True]
 			print
-
 		if ((id1!=None) or (id2!=None)):
 			if ((id1!=None) and (id2!=None)):
 				print "-------------------------------------------------------------------"
@@ -116,35 +125,26 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 				print 
 				print "WARNING - only one ID variale ... comparison not run "
 				print
-
-
 		print "-------------------------------------------------------------------"
 		print 
 		print "CATEGORICAL VARIABLE COMPARISON STATS (top 25 vars)"
 		print
-
 		if len(cstats)<25:
 			c_rows_print=len(cstats)
 		else:
 			c_rows_print=25
-
 		print cstats[['variable','chisq_pval']].sort_values('chisq_pval').reset_index(drop=True)[0:c_rows_print]
-
-
-	
 		print "-------------------------------------------------------------------"
 		print 
 		print "NUMERICAL VARIABLE COMPARISON STATS (top 25 vars)"
 		print
-
 		if len(nstats)<25:
 			n_rows_print=len(nstats)
 		else:
 			n_rows_print=25
-
 		print nstats[['variable','ks_pval']].sort_values('ks_pval').reset_index(drop=True)[0:n_rows_print]
 
-	return {'columns': cols, 'ids': ids, 'char_stats': cstats, 'num_stats': nstats}
+	return {'columns': cols,  'dtypes': t, 'ids': ids, 'char_stats': cstats, 'num_stats': nstats, 'nplots': nplots}
 
 
 #  add a print function for variable distribution comps ... one for num and on for cat
@@ -154,32 +154,32 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 def num_comp_plot(n1,n2):
 	"""Create ecdf plot comparing two numeric series distributions
 	"""
-    fig = plt.figure()
-    plt.plot(np.sort(n1), np.linspace(0, 1, len(n1), endpoint=False))
-    plt.plot(np.sort(n2), np.linspace(0, 1, len(n2), endpoint=False))
-    return fig
+	fig = plt.figure()
+	plt.plot(np.sort(n1), np.linspace(0, 1, len(n1), endpoint=False))
+	plt.plot(np.sort(n2), np.linspace(0, 1, len(n2), endpoint=False))
+	return fig
 
 
 def cat_comp_plot(c1,c2):
 	"""Create bar chart comparing two categorical series distributions
 	"""
-    vc1 = c1.value_counts(normalize=True,dropna=False)
-    vc2 = c2.value_counts(normalize=True,dropna=False)
-    df = pd.concat([vc1,vc2],axis=1).reset_index()
-    df.columns = ['value','c1','c2']
-    df['value'].fillna('NAN',inplace=True)
-    df['c1'].fillna(0,inplace=True)
-    df['c1'].fillna(0,inplace=True)
-    df['sort'] = df['c1'] + df['c2']
-    df.sort_values('sort',inplace=True)
-    df.reset_index(inplace=True,drop=True)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.barh(df.index,df['c1'],.3,color='b',align='center')
-    ax.barh(df.index+.3,df['c2'],.3,color='r',align='center')
-    ax.set_yticks(df.index)
-    ax.set_yticklabels(df['value'], rotation=40, ha='right')
-    return fig
+	vc1 = c1.value_counts(normalize=True,dropna=False)
+	vc2 = c2.value_counts(normalize=True,dropna=False)
+	df = pd.concat([vc1,vc2],axis=1).reset_index()
+	df.columns = ['value','c1','c2']
+	df['value'].fillna('NAN',inplace=True)
+	df['c1'].fillna(0,inplace=True)
+	df['c1'].fillna(0,inplace=True)
+	df['sort'] = df['c1'] + df['c2']
+	df.sort_values('sort',inplace=True)
+	df.reset_index(inplace=True,drop=True)
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	ax.barh(df.index,df['c1'],.3,color='b',align='center')
+	ax.barh(df.index+.3,df['c2'],.3,color='r',align='center')
+	ax.set_yticks(df.index)
+	ax.set_yticklabels(df['value'], rotation=40, ha='right')
+	return fig
 
 
 def chisq(base,compare):
