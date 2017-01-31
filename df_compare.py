@@ -4,23 +4,44 @@ import matplotlib.pyplot as plt
 from scipy.stats import chisquare
 from scipy.stats import ks_2samp
 
+try:
+    from StringIO import BytesIO
+except ImportError:
+    from io import BytesIO
+
+try:
+    from urllib import quote
+except ImportError:
+    from urllib.parse import quote
+    
+import base64
 
 def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 	"""Compares 2 pandas dataframes for differences
 	"""
 
 	# Compare variable sets
-	a = set(df1.columns)
-	b = set(df2.columns)
-	cols = {}
-	cols['a_only'] = a.difference(b)
-	cols['b_only'] = b.difference(a)
-	cols['both'] = a.intersection(b)
+	#a = set(df1.columns)
+	#b = set(df2.columns)
+	#cols = {}
+	#cols['a_only'] = a.difference(b)
+	#cols['b_only'] = b.difference(a)
+	#cols['both'] = a.intersection(b)
 
 	# Compare data types for overlapping attributes
-	t = pd.concat([df1.dtypes[cols['both']],df2.dtypes[cols['both']]],axis=1)
-	t.columns = ['df1_type','df2_type']
-	t['diff'] = t['df1_type'] != t['df2_type']
+	cols = pd.concat([df1.dtypes,df2.dtypes],axis=1)
+	cols.columns = ['df1_type','df2_type']
+	cols['diff'] = cols.apply(lambda row: str(row['df1_type']) != str(row['df2_type']), axis=1)
+
+	def same(row):
+	    if str(row['df1_type']) == 'nan':
+	        return 'df2_only'
+	    elif str(row['df2_type']) == 'nan':
+	        return 'df1_only'
+	    else:
+	        return 'both'
+
+	cols['coverage'] = cols.apply(lambda row: same(row), axis=1)
 
 	# Optionaly compare id variables
 	ids = {}
@@ -37,7 +58,8 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 
 
 	# Build summary metric df for Categorical variables
-	c_vars = t.loc[((t['diff']==False) & (t['df1_type']=='object'))]	
+	c_vars = cols.loc[((cols['diff']==False) & (cols['df1_type']=='object'))]	
+
 	cstats = pd.DataFrame(list(c_vars.index),columns=['variable'])
 
 	cstats['missing_df1'] = cstats['variable'].apply(lambda x: np.mean(df1[x].isnull()))
@@ -50,7 +72,7 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 
 
 	# Build summary metric df for Numerical variables	
-	n_vars = t.loc[((t['diff']==False) & (t['df1_type']!='object'))]	
+	n_vars = cols.loc[((cols['diff']==False) & (cols['df1_type']!='object'))]	
 	nstats = pd.DataFrame(list(n_vars.index),columns=['variable'])
 
 	nstats['missing_df1'] = nstats['variable'].apply(lambda x: np.mean(df1[x].isnull()))
@@ -72,8 +94,8 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 
 
 	#cplots = {k: cat_comp_plot(df1[k], df2[k]) for k in t.loc[((t['diff']==False) & (t['df1_type']=='object'))].index}
-	nplots = {k: num_comp_plot(df1[k], df2[k]) for k in t.loc[((t['diff']==False) & (t['df1_type']!='object'))].index}
-
+	nplots = {k: num_comp_plot(df1[k], df2[k]) for k in cols.loc[((cols['diff']==False) & (cols['df1_type']!='object'))].index}
+	nplots_bytes = {k: image_to_Bytes(nplots[k]) for k in nplots.keys()}
 
 
 	# optionaly print results
@@ -82,32 +104,8 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 		print 
 		print "VARIABLE OVERLAP COMPARISON"
 		print
-		print "# Columns in df1 only   :",len(cols['a_only'])
-		print 
-		if len(cols['a_only'])>0:
-			print pd.DataFrame(list(cols['a_only']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
-		print 
-		print "# Columns in df2 only   :",len(cols['b_only'])
+		print cols
 		print
-		if len(cols['b_only'])>0:
-			print pd.DataFrame(list(cols['b_only']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
-		print 
-		print "# Columns in both       :",len(cols['both'])
-		print
-		if len(cols['both'])>0:
-			print pd.DataFrame(list(cols['both']),columns=['Variable']).sort_values('Variable').reset_index(drop=True)
-		print
-		print "-------------------------------------------------------------------"
-		print 
-		print "VARIABLE DATA TYPE COMPARISON (for common variables)"
-		print
-		print sum(t['diff'])," Common variables have different data types"
-		print
-		if sum(t['diff'])>0:
-			print "Variables with different types:"
-			print 
-			print t[['df1_type','df2_type']].loc[t['diff']==True]
-			print
 		if ((id1!=None) or (id2!=None)):
 			if ((id1!=None) and (id2!=None)):
 				print "-------------------------------------------------------------------"
@@ -144,7 +142,11 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 			n_rows_print=25
 		print nstats[['variable','ks_pval']].sort_values('ks_pval').reset_index(drop=True)[0:n_rows_print]
 
-	return {'columns': cols,  'dtypes': t, 'ids': ids, 'char_stats': cstats, 'num_stats': nstats, 'nplots': nplots}
+	return {'columns': cols,  
+			'char_stats': cstats, 
+			'num_stats': nstats, 
+			'nplots': nplots,
+			'nplots_bytes': nplots_bytes}
 
 
 #  add a print function for variable distribution comps ... one for num and on for cat
@@ -203,3 +205,12 @@ def chisq(base,compare):
 		else:
 			ch = chisquare(f_obs=actual,f_exp=expected)
 			return ch[1]
+
+    
+def image_to_Bytes(img):        
+    imgdata = BytesIO()
+    img.savefig(imgdata)
+    imgdata.seek(0)
+    result_string = 'data:image/png;base64,' + \
+        quote(base64.b64encode(imgdata.getvalue()))
+    return result_string
