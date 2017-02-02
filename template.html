@@ -11,50 +11,53 @@ tr:nth-child(even) {background-color: #f2f2f2}
 
 table.tableSection {
   display: table;
-  width: 100%;
   border: 1px solid black;
 }
 
 table.tableSection thead,table.tableSection tbody {
-  width: 100%;
+  /*width: 100%;*/
 }
 
 table.tableSection thead {
   overflow-y: scroll;
   display: table;
   table-layout: fixed;
-  width: calc(100% - 16px); /* assuming scrollbar width as 16px */
+  /*width: calc(100% - 16px); /* assuming scrollbar width as 16px */
 }
 
 table.tableSection tbody {
   overflow: auto;
-  height: 150px;
+  height: 130px;
   display: block;
 }
 
 table.tableSection tr {
-  width: 100%;
-  text-align: left;
+  text-align: right;
   display: table;
   table-layout: fixed;
+  width: 100%;
 }
 
 table.tableSection th {
     background-color: #4CAF50;
     color: white;
+    text-align: right;
 }
 
+table.tableSection td {
+    text-align: right;
+}
 
 .button {
     background-color: #4CAF50; /* Green */
     border: none;
     color: white;
-    padding: 15px 32px;
+    padding: 10px 0px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-size: 20px;
-    width: 200px;
+    font-size: 16px;
+    width: 300px;
     -webkit-transition-duration: 0.4s; /* Safari */
     transition-duration: 0.4s;
     cursor: pointer;
@@ -65,9 +68,44 @@ table.tableSection th {
     color: white;
 }
 
+
+
+.container{
+    display: flex;
+}
+.fixed{
+    width: 310px;
+    height: 400px;
+    overflow: auto;
+}
+.flex-item{
+    flex-grow: 1;
+}
+
+
+
 </style>
 
 <body>
+
+<script>
+function myFunction(myDIV) {
+    var x = document.getElementById(myDIV);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+    } else {
+        x.style.display = 'none';
+    }
+}
+
+
+function formatN(n, dp) {
+  var s = ''+(Math.floor(n)), d = n % 1, i = s.length, r = '';
+  while ( (i -= 3) > 0 ) { r = ',' + s.substr(i, 3) + r; }
+  return s.substr(0, i + 3) + r + (d ? '.' + Math.round(d * Math.pow(10,dp||2)) : '');
+}
+
+</script>
 
 <div>
 <h1>Column Summary</h1>
@@ -146,45 +184,45 @@ table.tableSection th {
 	{% for index, row in comp['num_stats'].iterrows() %}
 		<tr>
 		<td>{{ row['variable'] }}</td>
-		<td>{{ row['missing_df1'] }}</td>
-		<td>{{ row['missing_df2'] }}</td>
-		<td>{{ row['zero_df1'] }}</td>
-		<td>{{ row['zero_df2'] }}</td>
-		<td>{{ row['mean_df1'] }}</td>
-		<td>{{ row['mean_df2'] }}</td>
-		<td>{{ row['min_df1'] }}</td>
-		<td>{{ row['min_df2'] }}</td>
-		<td>{{ row['max_df1'] }}</td>
-		<td>{{ row['max_df2'] }}</td>
-		<td>{{ row['ks_pval'] }}</td>
+		<td>{{ '{:.4f}'.format(row['missing_df1']) }}</td>
+		<td>{{ '{:.4f}'.format(row['missing_df2']) }}</td>
+		<td>{{ '{:.4f}'.format(row['zero_df1']) }}</td>
+		<td>{{ '{:.4f}'.format(row['zero_df2']) }}</td>
+		<td>{{ '{:.4f}'.format(row['mean_df1']) }}</td>
+		<td>{{ '{:.4f}'.format(row['mean_df2']) }}</td>
+		<td>{{ '{:.4f}'.format(row['min_df1']) }}</td>
+		<td>{{ '{:.4f}'.format(row['min_df2']) }}</td>
+		<td>{{ '{:.4f}'.format(row['max_df1']) }}</td>
+		<td>{{ '{:.4f}'.format(row['max_df2']) }}</td>
+		<td>{{ '{:.4f}'.format(row['ks_pval']) }}</td>
 		</tr>
 	{% endfor %}
   </tbody>
 </table>
 
-<script>
-function myFunction(myDIV) {
-    var x = document.getElementById(myDIV);
-    if (x.style.display === 'none') {
-        x.style.display = 'block';
-    } else {
-        x.style.display = 'none';
-    }
-}
-</script>
 
+<div class="container">
+  <div class="fixed">
 
-{% for n in comp['nplots'].keys() %}
-  <div>
-	<button class="button" onclick="myFunction('{{ n }}')">{{ n }}</button>
-
-	<div style="display:none;" id="{{ n }}">
-		<h2>{{ n }}</h2>
-		<img src="{{ comp['nplots_bytes'][n] }}">
-		</div>
-	</div>
+	{% for n in comp['nplots'].keys() %}
+	  <div>
+		<button class="button" onclick="myFunction('{{ n }}')">{{ n }}</button>
+	  </div>
+	{% endfor %}
   </div>
-{% endfor %}
+
+  <div class="flex-item"></div>
+
+	{% for n in comp['nplots'].keys() %}
+	  <div>
+		<div style="display:none;" id="{{ n }}">
+		<img src="{{ comp['nplots_bytes'][n] }}">
+	  </div>
+	{% endfor %}
+  </div>
+</div>
+
+</div>
 
 </body>
 </html>
