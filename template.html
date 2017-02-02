@@ -6,25 +6,62 @@
 
 <style>
 
-.headerrow {
-            border: 1px solid #e1e1e8;
-            background-color: #f5f5f5;
-            padding: 2em;
-        }
+
+tr:nth-child(even) {background-color: #f2f2f2}
+
+table.tableSection {
+  display: table;
+  width: 100%;
+  border: 1px solid black;
+}
+
+table.tableSection thead,table.tableSection tbody {
+  width: 100%;
+}
+
+table.tableSection thead {
+  overflow-y: scroll;
+  display: table;
+  table-layout: fixed;
+  width: calc(100% - 16px); /* assuming scrollbar width as 16px */
+}
+
+table.tableSection tbody {
+  overflow: auto;
+  height: 150px;
+  display: block;
+}
+
+table.tableSection tr {
+  width: 100%;
+  text-align: left;
+  display: table;
+  table-layout: fixed;
+}
+
+table.tableSection th {
+    background-color: #4CAF50;
+    color: white;
+}
+
 
 </style>
 
 <body>
 
+<div>
 <h1>Column Summary</h1>
 
-<table border="1" cellpadding="5" cellspacing="5">
+<table class="tableSection">
+  <thead>
 	<tr>
 	<th>Column</th>
 	<th>DF 1 Data Type</th>
 	<th>DF 2 Data Type</th>
 	<th>Same Data Type</th>
 	<th>DF Coverage</th>
+  </thead>
+  <tbody>
 	</tr>
 	{% for index, row in comp['columns'].iterrows() %}
 		<tr>
@@ -35,11 +72,14 @@
 		<td>{{ row['coverage'] }}</td>
 		</tr>
 	{% endfor %}
+  </tbody>
 </table>
+</div>
 
 <h1>Column Summary for Non-Numeric Variables</h1>
 
-<table border="1" cellpadding="5" cellspacing="5">
+<table class="tableSection">
+  <thead>
 	<tr>
 	<th>Column</th>
 	<th>DF 1 Missing Rate</th>
@@ -47,6 +87,8 @@
 	<th>DF 1 Mode Rate</th>
 	<th>DF 2 Mode Rate</th>
 	<th>Chi-Square P-Value</th>
+  </thead>
+  <tbody>
 	</tr>
 	{% for index, row in comp['char_stats'].iterrows() %}
 		<tr>
@@ -58,11 +100,13 @@
 		<td>{{ row['chisq_pval'] }}</td>
 		</tr>
 	{% endfor %}
+  </tbody>
 </table>
 
 <h1>Colmn Summary for Numeric Variables</h1>
 
-<table border="1" cellpadding="5" cellspacing="5">
+<table class="tableSection">
+  <thead>
 	<tr>
 	<th>Column</th>
 	<th>DF 1 Missing Rate</th>
@@ -76,6 +120,8 @@
 	<th>DF 1 Max Rate</th>
 	<th>DF 2 Max Rate</th>
 	<th>KS P-Value</th>
+  </thead>
+  <tbody>
 	</tr>
 	{% for index, row in comp['num_stats'].iterrows() %}
 		<tr>
@@ -93,16 +139,31 @@
 		<td>{{ row['ks_pval'] }}</td>
 		</tr>
 	{% endfor %}
+  </tbody>
 </table>
 
-<h1>ECDF Comparison Plots for Common Numeric Variables</h1>
-{% for col in comp['nplots_bytes'].keys() %}
-<div>
-<h2>{{ col }}</h2>
-<img src="{{ comp['nplots_bytes'][col] }}">
-</div>
-{% endfor %}
+<script>
+function myFunction() {
+    var x = document.getElementById('myDIV');
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+    } else {
+        x.style.display = 'none';
+    }
+}
+</script>
 
+<button onclick="myFunction()">Click Me to See Plots</button>
+
+<div id="myDIV">
+	<h1>ECDF Comparison Plots for Common Numeric Variables</h1>
+	{% for col in comp['nplots_bytes'].keys() %}
+	<div>
+	<h2>{{ col }}</h2>
+	<img src="{{ comp['nplots_bytes'][col] }}">
+	</div>
+	{% endfor %}
+</div>
 
 </body>
 </html>
