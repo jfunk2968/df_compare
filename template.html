@@ -45,6 +45,26 @@ table.tableSection th {
 }
 
 
+.button {
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 20px;
+    width: 200px;
+    -webkit-transition-duration: 0.4s; /* Safari */
+    transition-duration: 0.4s;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #4CAF50; /* Green */
+    color: white;
+}
+
 </style>
 
 <body>
@@ -143,8 +163,8 @@ table.tableSection th {
 </table>
 
 <script>
-function myFunction() {
-    var x = document.getElementById('myDIV');
+function myFunction(myDIV) {
+    var x = document.getElementById(myDIV);
     if (x.style.display === 'none') {
         x.style.display = 'block';
     } else {
@@ -153,17 +173,18 @@ function myFunction() {
 }
 </script>
 
-<button onclick="myFunction()">Click Me to See Plots</button>
 
-<div id="myDIV">
-	<h1>ECDF Comparison Plots for Common Numeric Variables</h1>
-	{% for col in comp['nplots_bytes'].keys() %}
-	<div>
-	<h2>{{ col }}</h2>
-	<img src="{{ comp['nplots_bytes'][col] }}">
+{% for n in comp['nplots'].keys() %}
+  <div>
+	<button class="button" onclick="myFunction('{{ n }}')">{{ n }}</button>
+
+	<div style="display:none;" id="{{ n }}">
+		<h2>{{ n }}</h2>
+		<img src="{{ comp['nplots_bytes'][n] }}">
+		</div>
 	</div>
-	{% endfor %}
-</div>
+  </div>
+{% endfor %}
 
 </body>
 </html>
