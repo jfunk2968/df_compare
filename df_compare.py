@@ -97,8 +97,8 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 
 
 	#cplots = {k: cat_comp_plot(df1[k], df2[k]) for k in t.loc[((t['diff']==False) & (t['df1_type']=='object'))].index}
-	nplots = {k: num_comp_plot(df1[k], df2[k], xtitle=k+' Range') for k in cols.loc[((cols['diff']==False) & (cols['df1_type']!='object'))].index}
-	nplots_bytes = {k: image_to_Bytes(nplots[k][1]) for k in nplots.keys()}
+	nplots = {k: num_comp_plot(df1[k], df2[k], name=k+' Range') for k in cols.loc[((cols['diff']==False) & (cols['df1_type']!='object'))].index}
+	nplots_bytes = {k: image_to_Bytes(nplots[k][2]) for k in nplots.keys()}
 
 
 	# optionaly print results
@@ -154,7 +154,7 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 
 #  add a print function for variable distribution comps ... one for num and on for cat
 
-def num_comp_plot(n1, n2, sampsize=1000, norm=True, xtitle="Variable"):
+def num_comp_plot(n1, n2, sampsize=1000, norm=True, name="Variable"):
     """Create ecdf plot comparing two numeric series distributions
     """
     s1 = np.array(sample(n1,min(len(n1),sampsize)))
@@ -182,11 +182,10 @@ def num_comp_plot(n1, n2, sampsize=1000, norm=True, xtitle="Variable"):
     ax.add_patch(patch)
     plt.plot(np.sort(s1), np.linspace(0, 1, len(s1), endpoint=False))
     plt.plot(np.sort(s2), np.linspace(0, 1, len(s2), endpoint=False))
-
     plt.ylabel("Empirical Cumulative Density")
-    plt.xlabel(xtitle)
+    plt.xlabel(name)
 
-    return polygon.area, fig
+    return name, polygon.area, fig
 
 
 

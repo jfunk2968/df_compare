@@ -90,12 +90,18 @@ table.tableSection td {
 
 <script>
 function myFunction(myDIV) {
-    var x = document.getElementById(myDIV);
-    if (x.style.display === 'none') {
-        x.style.display = 'block';
-    } else {
-        x.style.display = 'none';
-    }
+  var img_ids = {{ comp['nplots'].keys() }};
+  var arrayLength = img_ids.length;
+
+  for (var i = 0; i < arrayLength; i++) {
+
+    var x = document.getElementById(img_ids[i]);
+	if (img_ids[i] === myDIV) {
+	    x.style.display = 'block';
+	} else {
+	    x.style.display = 'none';
+	}
+  }
 }
 
 
@@ -151,10 +157,10 @@ function formatN(n, dp) {
 	{% for index, row in comp['char_stats'].iterrows() %}
 		<tr>
 		<td>{{ row['variable'] }}</td>
-		<td>{{ row['missing_df1'] }}</td>
-		<td>{{ row['missing_df2'] }}</td>
-		<td>{{ row['pct_mode_df1'] }}</td>
-		<td>{{ row['pct_mode_df2'] }}</td>
+		<td>{{ '{:.4f}'.format(row['missing_df1']) }}</td>
+		<td>{{ '{:.4f}'.format(row['missing_df2']) }}</td>
+		<td>{{ '{:.4f}'.format(row['pct_mode_df1']) }}</td>
+		<td>{{ '{:.4f}'.format(row['pct_mode_df2']) }}</td>
 		<td>{{ row['chisq_pval'] }}</td>
 		</tr>
 	{% endfor %}
@@ -206,7 +212,7 @@ function formatN(n, dp) {
 
 	{% for n in comp['nplots'].keys() %}
 	  <div>
-		<button class="button" onclick="myFunction('{{ n }}')">{{ n, '{:.4f}'.format(comp['nplots'][n][0]) }}</button>
+		<button class="button" onclick="myFunction('{{ n }}')">{{ n, '{:.4f}'.format(comp['nplots'][n][1]) }}</button>
 	  </div>
 	{% endfor %}
   </div>
