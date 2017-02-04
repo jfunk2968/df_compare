@@ -206,7 +206,7 @@ function formatN(n, dp) {
 
 	{% for n in comp['nplots'].keys() %}
 	  <div>
-		<button class="button" onclick="myFunction('{{ n }}')">{{ n }}</button>
+		<button class="button" onclick="myFunction('{{ n }}')">{{ n, '{:.4f}'.format(comp['nplots'][n][0]) }}</button>
 	  </div>
 	{% endfor %}
   </div>

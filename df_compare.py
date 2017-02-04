@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import chisquare
 from scipy.stats import ks_2samp
+from shapely.geometry import Polygon
+from descartes.patch import PolygonPatch
+from random import sample
 
 try:
     from StringIO import BytesIO
@@ -94,8 +97,8 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 
 
 	#cplots = {k: cat_comp_plot(df1[k], df2[k]) for k in t.loc[((t['diff']==False) & (t['df1_type']=='object'))].index}
-	nplots = {k: num_comp_plot(df1[k], df2[k]) for k in cols.loc[((cols['diff']==False) & (cols['df1_type']!='object'))].index}
-	nplots_bytes = {k: image_to_Bytes(nplots[k]) for k in nplots.keys()}
+	nplots = {k: num_comp_plot(df1[k], df2[k], xtitle=k+' Range') for k in cols.loc[((cols['diff']==False) & (cols['df1_type']!='object'))].index}
+	nplots_bytes = {k: image_to_Bytes(nplots[k][1]) for k in nplots.keys()}
 
 
 	# optionaly print results
@@ -151,15 +154,40 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 
 #  add a print function for variable distribution comps ... one for num and on for cat
 
+def num_comp_plot(n1, n2, sampsize=1000, norm=True, xtitle="Variable"):
+    """Create ecdf plot comparing two numeric series distributions
+    """
+    s1 = np.array(sample(n1,min(len(n1),sampsize)))
+    s2 = np.array(sample(n2,min(len(n2),sampsize)))
 
+    lower = float(min(min(n1),min(n2)))
+    upper = float(max(max(n1),max(n2)))
+    
+    if norm==True:
+        s1 = (s1-lower)/(upper-lower)
+        s2 = (s2-lower)/(upper-lower)
 
-def num_comp_plot(n1,n2):
-	"""Create ecdf plot comparing two numeric series distributions
-	"""
-	fig = plt.figure()
-	plt.plot(np.sort(n1), np.linspace(0, 1, len(n1), endpoint=False))
-	plt.plot(np.sort(n2), np.linspace(0, 1, len(n2), endpoint=False))
-	return fig
+    a = list(zip(np.sort(s1), np.linspace(0, 1, len(s1), endpoint=False)))
+    b = list(zip(np.sort(s2), np.linspace(0, 1, len(s2), endpoint=False)))
+
+    b.reverse()
+    a.extend(b)
+    a.append(a[0])
+
+    polygon = Polygon(a)
+
+    fig = plt.figure(figsize=(9,6))
+    ax = fig.add_subplot(111)
+    patch = PolygonPatch(polygon, facecolor='lightgray', edgecolor='lightgray', alpha=0.5, zorder=2)
+    ax.add_patch(patch)
+    plt.plot(np.sort(s1), np.linspace(0, 1, len(s1), endpoint=False))
+    plt.plot(np.sort(s2), np.linspace(0, 1, len(s2), endpoint=False))
+
+    plt.ylabel("Empirical Cumulative Density")
+    plt.xlabel(xtitle)
+
+    return polygon.area, fig
+
 
 
 def cat_comp_plot(c1,c2):
