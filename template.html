@@ -107,14 +107,27 @@ table.tableSection td {
 <body>
 
 <script>
-function myFunction(myDIV) {
-  var img_ids = {{ comp['nplots'].keys() }};
-  var arrayLength = img_ids.length;
+function showPlotsN(div) {
+  var img_idsN = {{ comp['nplots'].keys() }};
+  var arrayLengthN = img_idsN.length;
 
-  for (var i = 0; i < arrayLength; i++) {
+  for (var i = 0; i < arrayLengthN; i++) {
+    var x = document.getElementById(img_idsN[i]);
+	if (img_idsN[i] === div) {
+	    x.style.display = 'block';
+	} else {
+	    x.style.display = 'none';
+	}
+  }
+}
 
-    var x = document.getElementById(img_ids[i]);
-	if (img_ids[i] === myDIV) {
+function showPlotsC(div) {
+  var img_idsC = {{ comp['cplots'].keys() }};
+  var arrayLengthC = img_idsC.length;
+
+  for (var i = 0; i < arrayLengthC; i++) {
+    var x = document.getElementById(img_idsC[i]);
+	if (img_idsC[i] === div) {
 	    x.style.display = 'block';
 	} else {
 	    x.style.display = 'none';
@@ -135,8 +148,10 @@ function formatN(n, dp) {
 
   <ul class="ui-tabs-nav">
     <li><a href="#tabs-1">Column Summary</a></li>
-    <li><a href="#tabs-2">Numeric Columns</a></li>
-    <li><a href="#tabs-3">Categorical Columns</a></li>
+    <li><a href="#tabs-2">Categorical Column Summary</a></li>
+    <li><a href="#tabs-3">Categorical Plots</a></li>
+    <li><a href="#tabs-4">Numeric Column Summary</a></li>
+    <li><a href="#tabs-5">Numeric Plots</a></li>
   </ul>
 
 	<div id="tabs-1">
@@ -167,7 +182,7 @@ function formatN(n, dp) {
 	</div>
 
 	<div id="tabs-2">
-	<h1>Column Summary for Non-Numeric Variables</h1>
+	<h1>Column Summary for Categorical Variables</h1>
 
 	<table class="tableSection">
 	  <thead>
@@ -195,7 +210,29 @@ function formatN(n, dp) {
 	</table>
 	</div>
 
-	<div id="tabs-3">
+
+
+	<div class="container" id="tabs-3">
+	  <div class="fixed">
+
+		{% for c in comp['cplots'].keys() %}
+		  <div>
+			<button class="button" onclick="showPlotsC('{{ c }}')">{{ c, '{:.4f}'.format(comp['cplots'][c][1]) }}</button>
+		  </div>
+		{% endfor %}
+	  </div>
+
+	  <div class="flex-item">
+		{% for c in comp['cplots'].keys() %}
+		  <div style="display:none;" id="{{ c }}">
+			<img src="{{ comp['cplots_bytes'][c] }}">
+		  </div>
+		{% endfor %}
+	  </div>
+	</div>
+
+
+	<div id="tabs-4">
 	<h1>Column Summary for Numeric Variables</h1>
 
 	<table class="tableSection">
@@ -235,29 +272,26 @@ function formatN(n, dp) {
 	  </tbody>
 	</table>
 	</div>
-</div>
 
 
-<div class="container">
-  <div class="fixed">
+	<div class="container" id="tabs-5">
+	  <div class="fixed">
 
-	{% for n in comp['nplots'].keys() %}
-	  <div>
-		<button class="button" onclick="myFunction('{{ n }}')">{{ n, '{:.4f}'.format(comp['nplots'][n][1]) }}</button>
+		{% for n in comp['nplots'].keys() %}
+		  <div>
+			<button class="button" onclick="showPlotsN('{{ n }}')">{{ n, '{:.4f}'.format(comp['nplots'][n][1]) }}</button>
+		  </div>
+		{% endfor %}
 	  </div>
-	{% endfor %}
-  </div>
 
-  <div class="flex-item"></div>
-
-	{% for n in comp['nplots'].keys() %}
-	  <div>
-		<div style="display:none;" id="{{ n }}">
-		<img src="{{ comp['nplots_bytes'][n] }}">
+	  <div class="flex-item">
+		{% for n in comp['nplots'].keys() %}
+		  <div style="display:none;" id="{{ n }}">
+			<img src="{{ comp['nplots_bytes'][n] }}">
+		  </div>
+		{% endfor %}
 	  </div>
-	{% endfor %}
-  </div>
-</div>
+	</div>
 
 </div>
 
