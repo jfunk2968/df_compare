@@ -19,7 +19,7 @@ except ImportError:
     
 import base64
 
-def df_comp(df1, df2, id1=None, id2=None, verbose=0):
+def df_comp(df1, df2, id1=None, id2=None, max_cats=20, verbose=0):
 	"""Compares 2 pandas dataframes for differences
 	"""
 
@@ -34,6 +34,7 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 	# Compare data types for overlapping attributes
 	cols = pd.concat([df1.dtypes,df2.dtypes],axis=1)
 	cols.columns = ['df1_type','df2_type']
+
 	cols['diff'] = cols.apply(lambda row: str(row['df1_type']) != str(row['df2_type']), axis=1)
 
 	def same(row):
@@ -68,10 +69,18 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 	cstats['missing_df1'] = cstats['variable'].apply(lambda x: np.mean(df1[x].isnull()))
 	cstats['missing_df2'] = cstats['variable'].apply(lambda x: np.mean(df2[x].isnull()))
 
+	cstats['nunique_df1'] = cstats['variable'].apply(lambda x: df1[x].nunique())
+	cstats['nunique_df2'] = cstats['variable'].apply(lambda x: df2[x].nunique())
+
 	cstats['pct_mode_df1'] = cstats['variable'].apply(lambda x: np.mean(df1[x] == df1[x].value_counts().index[0]))
 	cstats['pct_mode_df2'] = cstats['variable'].apply(lambda x: np.mean(df2[x] == df2[x].value_counts().index[0]))
 
 	cstats['chisq_pval'] = cstats['variable'].apply(lambda x: chisq(df1[x],df2[x]))
+
+	cplots = {k: cat_comp_plot(df1[k], df2[k], name=k+' Value') for k in 
+		cstats['variable'].loc[((cstats['nunique_df1'] <  max_cats) &
+								(cstats['nunique_df2'] <  max_cats))]}
+	cplots_bytes = {k: image_to_Bytes(cplots[k][2]) for k in cplots.keys()}
 
 
 	# Build summary metric df for Numerical variables	
@@ -95,8 +104,6 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 
 	nstats['ks_pval'] = nstats['variable'].apply(lambda x: ks_2samp(df1[x],df2[x])[1])
 
-
-	#cplots = {k: cat_comp_plot(df1[k], df2[k]) for k in t.loc[((t['diff']==False) & (t['df1_type']=='object'))].index}
 	nplots = {k: num_comp_plot(df1[k], df2[k], name=k+' Range') for k in cols.loc[((cols['diff']==False) & (cols['df1_type']!='object'))].index}
 	nplots_bytes = {k: image_to_Bytes(nplots[k][2]) for k in nplots.keys()}
 
@@ -146,7 +153,9 @@ def df_comp(df1, df2, id1=None, id2=None, verbose=0):
 		print nstats[['variable','ks_pval']].sort_values('ks_pval').reset_index(drop=True)[0:n_rows_print]
 
 	return {'columns': cols,  
-			'char_stats': cstats, 
+			'char_stats': cstats,
+			'cplots': cplots,
+			'cplots_bytes': cplots_bytes,
 			'num_stats': nstats, 
 			'nplots': nplots,
 			'nplots_bytes': nplots_bytes}
@@ -189,26 +198,32 @@ def num_comp_plot(n1, n2, sampsize=1000, norm=True, name="Variable"):
 
 
 
-def cat_comp_plot(c1,c2):
-	"""Create bar chart comparing two categorical series distributions
-	"""
-	vc1 = c1.value_counts(normalize=True,dropna=False)
-	vc2 = c2.value_counts(normalize=True,dropna=False)
-	df = pd.concat([vc1,vc2],axis=1).reset_index()
-	df.columns = ['value','c1','c2']
-	df['value'].fillna('NAN',inplace=True)
-	df['c1'].fillna(0,inplace=True)
-	df['c1'].fillna(0,inplace=True)
-	df['sort'] = df['c1'] + df['c2']
-	df.sort_values('sort',inplace=True)
-	df.reset_index(inplace=True,drop=True)
-	fig = plt.figure()
-	ax = fig.add_subplot(111)
-	ax.barh(df.index,df['c1'],.3,color='b',align='center')
-	ax.barh(df.index+.3,df['c2'],.3,color='r',align='center')
-	ax.set_yticks(df.index)
-	ax.set_yticklabels(df['value'], rotation=40, ha='right')
-	return fig
+def cat_comp_plot(c1, c2, sampsize=1000, norm=True, name="Variable"):
+    """Create bar chart comparing two categorical series distributions
+    """
+    vc1 = c1.value_counts(normalize=True,dropna=False)
+    vc2 = c2.value_counts(normalize=True,dropna=False)
+
+    df = pd.concat([vc1,vc2],axis=1).reset_index()
+    df.columns = ['value','c1','c2']
+    df['value'].fillna('NAN',inplace=True)
+    df['c1'].fillna(0,inplace=True)
+    df['c2'].fillna(0,inplace=True)
+    df['diff'] = abs(df['c1'] - df['c2'])
+    df['sort'] = df['c1'] + df['c2']
+
+    df.sort_values('sort',inplace=True)
+    df.reset_index(inplace=True,drop=True)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.barh(df.index,df['c1'],.3,color='b',align='center')
+    ax.barh(df.index+.3,df['c2'],.3,color='r',align='center')
+    ax.set_yticks(df.index)
+    ax.set_yticklabels(df['value'], rotation=40, ha='right')
+    
+    plt.ylabel(name)
+    plt.xlabel("Value Percent")
+    return df, sum(df['diff'])/2.0, fig
 
 
 def chisq(base,compare):
