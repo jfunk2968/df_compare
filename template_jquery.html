@@ -4,7 +4,8 @@
  	<meta charset="utf-8">
 	<title>Data Frame Comparison</title>
 	<link href="jquery-ui.css" rel="stylesheet">
-
+	<link rel="stylesheet" type="text/css" href="datatables.css">
+  
 	<style>
 		body{
 			font-family: "Trebuchet MS", sans-serif;
@@ -107,12 +108,6 @@
 		}
 		</style>
 
-		<script>
-		  $( function() {
-		    $( "#accordion" ).accordion();
-		  } );
-		</script>
-
 </head>
 
 
@@ -161,12 +156,11 @@
 	<ul>
 		<li><a href="#tabs-0">Summary Report</a></li>
 		<li><a href="#tabs-1">Column Comparison</a></li>
+		<li><a href="#tabs-1.1">Column Comparison2</a></li>
 	    <li><a href="#tabs-2">Categorical Summary</a></li>
 	    <li><a href="#tabs-3">Categorical Plots</a></li>
 	    <li><a href="#tabs-4">Numeric Summary</a></li>
 	    <li><a href="#tabs-5">Numeric Plots</a></li>
-	    <li><a href="#tabs-6">Radios</a></li>
-	    <li><a href="#tabs-7">A</a></li>
 	</ul>
 
 	<div id="tabs-0">Summary report TBD...</div>
@@ -183,6 +177,31 @@
 	  </thead>
 	  <tbody class='ui-widget-content'>
 		</tr>
+		{% for index, row in comp['columns'].iterrows() %}
+			<tr>
+			<td>{{ index }}</td>
+			<td>{{ row['df1_type'] }}</td>
+			<td>{{ row['df2_type'] }}</td>
+			<td>{{ row['diff'] }}</td>
+			<td>{{ row['coverage'] }}</td>
+			</tr>
+		{% endfor %}
+	  </tbody>
+	</table>
+	</div>
+
+	<div id="tabs-1.1">
+	<table id="clean_table" class="display">
+	  <thead>
+		<tr>
+		<th>Column</th>
+		<th>DF1 Data Type</th>
+		<th>DF2 Data Type</th>
+		<th>Same Data Type</th>
+		<th>DF Coverage</th>
+	    </tr>
+	  </thead>
+	  <tbody>
 		{% for index, row in comp['columns'].iterrows() %}
 			<tr>
 			<td>{{ index }}</td>
@@ -224,22 +243,16 @@
 	</div>
 
 	<div class="container" id="tabs-3">
-	  <div class="fixed">
-
-		{% for c in comp['cplots'].keys() %}
-		  <div>
-			<button class="button" onclick="showPlotsC('{{ c }}')">{{ c, '{:.4f}'.format(comp['cplots'][c][1]) }}</button>
-		  </div>
-		{% endfor %}
-	  </div>
-
-	  <div class="flex-item">
-		{% for c in comp['cplots'].keys() %}
-		  <div style="display:none;" id="{{ c }}">
-			<img src="{{ comp['cplots_bytes'][c] }}">
-		  </div>
-		{% endfor %}
-	  </div>
+		<div id="accordion">
+			{% for c in comp['cplots'].keys() %}
+			  <h3>{{ c, '{:.4f}'.format(comp['cplots'][c][1]) }}</h3>
+			  <div>
+			    <p>
+					<img src="{{ comp['cplots_bytes'][c] }}">			    
+				</p>
+			  </div>
+			{% endfor %}
+		</div>
 	</div>
 
 	<div id="tabs-4">
@@ -282,41 +295,7 @@
 	</div>
 
 	<div class="container" id="tabs-5">
-	  <div class="fixed">
-
-		{% for n in comp['nplots'].keys() %}
-		  <div>
-			<button class="button" onclick="showPlotsN('{{ n }}')">{{ n, '{:.4f}'.format(comp['nplots'][n][1]) }}</button>
-		  </div>
-		{% endfor %}
-	  </div>
-
-	  <div class="flex-item">
-		{% for n in comp['nplots'].keys() %}
-		  <div style="display:none;" id="{{ n }}">
-			<img src="{{ comp['nplots_bytes'][n] }}">
-		  </div>
-		{% endfor %}
-	  </div>
-	</div>
-
-	<div class="container" id="tabs-6">
-		<h2>Radio Group</h2>
-		  <fieldset>
-		    <legend>Select a Location: </legend>
-		    <label for="radio-1">New York</label>
-		    <input type="radio" name="radio-1" id="radio-1">
-		    <label for="radio-2">Paris</label>
-		    <input type="radio" name="radio-1" id="radio-2">
-		    <label for="radio-3">London</label>
-		    <input type="radio" name="radio-1" id="radio-3">
-		</fieldset>
-	</div>
-
-	<div class="container" id="tabs-7">
-
 		<div id="accordion">
-
 			{% for n in comp['nplots'].keys() %}
 			  <h3>{{ n, '{:.4f}'.format(comp['nplots'][n][1]) }}</h3>
 			  <div>
@@ -325,7 +304,6 @@
 				</p>
 			  </div>
 			{% endfor %}
-
 		</div>
 	</div>
 
@@ -333,9 +311,16 @@
 
 <script src="external/jquery/jquery.js"></script>
 <script src="jquery-ui.js"></script>
+<script type="text/javascript" charset="utf8" src="datatables.js"></script>
+
 <script>
 
-$( "#accordion" ).accordion();
+$(document).ready( function () {
+    $('#clean_table').DataTable();
+} );
+
+
+$( "#accordion:nth-child(1n)" ).accordion();
 
 
 
