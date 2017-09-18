@@ -156,7 +156,6 @@
 	<ul>
 		<li><a href="#tabs-0">Summary Report</a></li>
 		<li><a href="#tabs-1">Column Comparison</a></li>
-		<li><a href="#tabs-1.1">Column Comparison2</a></li>
 	    <li><a href="#tabs-2">Categorical Summary</a></li>
 	    <li><a href="#tabs-3">Categorical Plots</a></li>
 	    <li><a href="#tabs-4">Numeric Summary</a></li>
@@ -166,31 +165,6 @@
 	<div id="tabs-0">Summary report TBD...</div>
 
 	<div id="tabs-1">
-	<table class="tableSection">
-	  <thead class='ui-widget-header'>
-		<tr>
-		<th>Column</th>
-		<th>DF1 Data Type</th>
-		<th>DF2 Data Type</th>
-		<th>Same Data Type</th>
-		<th>DF Coverage</th>
-	  </thead>
-	  <tbody class='ui-widget-content'>
-		</tr>
-		{% for index, row in comp['columns'].iterrows() %}
-			<tr>
-			<td>{{ index }}</td>
-			<td>{{ row['df1_type'] }}</td>
-			<td>{{ row['df2_type'] }}</td>
-			<td>{{ row['diff'] }}</td>
-			<td>{{ row['coverage'] }}</td>
-			</tr>
-		{% endfor %}
-	  </tbody>
-	</table>
-	</div>
-
-	<div id="tabs-1.1">
 	<table id="clean_table" class="display">
 	  <thead>
 		<tr>
@@ -216,8 +190,8 @@
 	</div>
 
 	<div id="tabs-2">
-	<table class="tableSection">
-	  <thead class='ui-widget-header'>
+	<table id="clean_table" class="display">
+	  <thead>
 		<tr>
 		<th>Column</th>
 		<th>DF1 Missing %</th>
@@ -225,9 +199,9 @@
 		<th>DF1 Mode %</th>
 		<th>DF2 Mode %</th>
 		<th>Chi-Square P-Value</th>
+	    </tr>
 	  </thead>
-	  <tbody class='ui-widget-content'>
-		</tr>
+	  <tbody>
 		{% for index, row in comp['char_stats'].iterrows() %}
 			<tr>
 			<td>{{ row['variable'] }}</td>
@@ -256,8 +230,8 @@
 	</div>
 
 	<div id="tabs-4">
-	<table class="tableSection">
-	  <thead class='ui-widget-header'>
+	<table id="clean_table" class="display">
+	  <thead>
 		<tr>
 		<th>Column</th>
 		<th>DF1 Missing %</th>
@@ -271,9 +245,9 @@
 		<th>DF1 Max %</th>
 		<th>DF2 Max %</th>
 		<th>KS P-Value</th>
+	    </tr>
 	  </thead>
-	  <tbody class='ui-widget-content'>
-		</tr>
+	  <tbody>
 		{% for index, row in comp['num_stats'].iterrows() %}
 			<tr>
 			<td>{{ row['variable'] }}</td>
@@ -316,7 +290,7 @@
 <script>
 
 $(document).ready( function () {
-    $('#clean_table').DataTable();
+    $('#clean_table:nth-child(1n)').DataTable();
 } );
 
 
