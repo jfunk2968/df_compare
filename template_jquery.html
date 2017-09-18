@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang='us'>
+<head>
+ 	<meta charset="utf-8">
+	<title>Data Frame Comparison</title>
+	<link href="jquery-ui.css" rel="stylesheet">
+
+	<style>
+		body{
+			font-family: "Trebuchet MS", sans-serif;
+			margin: 50px;
+		}
+		.demoHeaders {
+			margin-top: 2em;
+		}
+		#dialog-link {
+			padding: .4em 1em .4em 20px;
+			text-decoration: none;
+			position: relative;
+		}
+		#dialog-link span.ui-icon {
+			margin: 0 5px 0 0;
+			position: absolute;
+			left: .2em;
+			top: 50%;
+			margin-top: -8px;
+		}
+		#icons {
+			margin: 0;
+			padding: 0;
+		}
+		#icons li {
+			margin: 2px;
+			position: relative;
+			padding: 4px 0;
+			cursor: pointer;
+			float: left;
+			list-style: none;
+		}
+		#icons span.ui-icon {
+			float: left;
+			margin: 0 4px;
+		}
+		.fakewindowcontain .ui-widget-overlay {
+			position: absolute;
+		}
+		.button {
+		    background-color: #4CAF50; /* Green */
+		    border: 10px;
+		    color: white;
+		    padding: 10px 10px;
+		    text-align: center;
+		    text-decoration: none;
+		    display: inline-block;
+		    font-size: 16px;
+		    width: 300px;
+		    cursor: pointer;
+		}
+		.container{
+		    display: flex;
+		    overflow: auto;
+		}
+		.fixed{
+		    width: 310px;
+		    height: 100%;
+		    overflow: auto;
+		    padding: 15px;
+		    float: left;
+		}
+		.flex-item{
+		    flex-grow: 1;
+		}
+		tr:nth-child(even) {
+		  background-color: #f2f2f2
+		}
+		table.tableSection {
+		  display: table;
+		  border: 1px solid black;
+		}
+		table.tableSection thead {
+		  overflow-y: scroll;
+		  display: table;
+		  table-layout: fixed;
+		  /*width: calc(100% - 16px); /* assuming scrollbar width as 16px */
+		}
+		table.tableSection tbody {
+		  overflow: auto;
+		  height: 530px;
+		  display: block;
+		}
+		table.tableSection tr {
+		  text-align: right;
+		  display: table;
+		  table-layout: fixed;
+		  width: 100%;
+		}
+		table.tableSection th {
+		    background-color: #4CAF50;
+		    color: white;
+		    text-align: right;
+		}
+		table.tableSection td {
+		    text-align: right;
+		}
+		select {
+			width: 200px;
+		}
+		</style>
+
+		<script>
+		  $( function() {
+		    $( "#accordion" ).accordion();
+		  } );
+		</script>
+
+</head>
+
+
+<body>
+
+	<script>
+	function showPlotsN(div) {
+	  var img_idsN = {{ comp['nplots'].keys() }};
+	  var arrayLengthN = img_idsN.length;
+
+	  for (var i = 0; i < arrayLengthN; i++) {
+	    var x = document.getElementById(img_idsN[i]);
+		if (img_idsN[i] === div) {
+		    x.style.display = 'block';
+		} else {
+		    x.style.display = 'none';
+		}
+	  }
+	}
+
+	function showPlotsC(div) {
+	  var img_idsC = {{ comp['cplots'].keys() }};
+	  var arrayLengthC = img_idsC.length;
+
+	  for (var i = 0; i < arrayLengthC; i++) {
+	    var x = document.getElementById(img_idsC[i]);
+		if (img_idsC[i] === div) {
+		    x.style.display = 'block';
+		} else {
+		    x.style.display = 'none';
+		}
+	  }
+	}
+
+
+	function formatN(n, dp) {
+	  var s = ''+(Math.floor(n)), d = n % 1, i = s.length, r = '';
+	  while ( (i -= 3) > 0 ) { r = ',' + s.substr(i, 3) + r; }
+	  return s.substr(0, i + 3) + r + (d ? '.' + Math.round(d * Math.pow(10,dp||2)) : '');
+	}
+
+	</script>
+
+<h1 class="demoHeaders">Pandas Dataframe Comparison</h1>
+<div id="tabs">
+	<ul>
+		<li><a href="#tabs-0">Summary Report</a></li>
+		<li><a href="#tabs-1">Column Comparison</a></li>
+	    <li><a href="#tabs-2">Categorical Summary</a></li>
+	    <li><a href="#tabs-3">Categorical Plots</a></li>
+	    <li><a href="#tabs-4">Numeric Summary</a></li>
+	    <li><a href="#tabs-5">Numeric Plots</a></li>
+	    <li><a href="#tabs-6">Radios</a></li>
+	    <li><a href="#tabs-7">A</a></li>
+	</ul>
+
+	<div id="tabs-0">Summary report TBD...</div>
+
+	<div id="tabs-1">
+	<table class="tableSection">
+	  <thead class='ui-widget-header'>
+		<tr>
+		<th>Column</th>
+		<th>DF1 Data Type</th>
+		<th>DF2 Data Type</th>
+		<th>Same Data Type</th>
+		<th>DF Coverage</th>
+	  </thead>
+	  <tbody class='ui-widget-content'>
+		</tr>
+		{% for index, row in comp['columns'].iterrows() %}
+			<tr>
+			<td>{{ index }}</td>
+			<td>{{ row['df1_type'] }}</td>
+			<td>{{ row['df2_type'] }}</td>
+			<td>{{ row['diff'] }}</td>
+			<td>{{ row['coverage'] }}</td>
+			</tr>
+		{% endfor %}
+	  </tbody>
+	</table>
+	</div>
+
+	<div id="tabs-2">
+	<table class="tableSection">
+	  <thead class='ui-widget-header'>
+		<tr>
+		<th>Column</th>
+		<th>DF1 Missing %</th>
+		<th>DF2 Missing %</th>
+		<th>DF1 Mode %</th>
+		<th>DF2 Mode %</th>
+		<th>Chi-Square P-Value</th>
+	  </thead>
+	  <tbody class='ui-widget-content'>
+		</tr>
+		{% for index, row in comp['char_stats'].iterrows() %}
+			<tr>
+			<td>{{ row['variable'] }}</td>
+			<td>{{ '{:.4f}'.format(row['missing_df1']) }}</td>
+			<td>{{ '{:.4f}'.format(row['missing_df2']) }}</td>
+			<td>{{ '{:.4f}'.format(row['pct_mode_df1']) }}</td>
+			<td>{{ '{:.4f}'.format(row['pct_mode_df2']) }}</td>
+			<td>{{ row['chisq_pval'] }}</td>
+			</tr>
+		{% endfor %}
+	  </tbody>
+	</table>
+	</div>
+
+	<div class="container" id="tabs-3">
+	  <div class="fixed">
+
+		{% for c in comp['cplots'].keys() %}
+		  <div>
+			<button class="button" onclick="showPlotsC('{{ c }}')">{{ c, '{:.4f}'.format(comp['cplots'][c][1]) }}</button>
+		  </div>
+		{% endfor %}
+	  </div>
+
+	  <div class="flex-item">
+		{% for c in comp['cplots'].keys() %}
+		  <div style="display:none;" id="{{ c }}">
+			<img src="{{ comp['cplots_bytes'][c] }}">
+		  </div>
+		{% endfor %}
+	  </div>
+	</div>
+
+	<div id="tabs-4">
+	<table class="tableSection">
+	  <thead class='ui-widget-header'>
+		<tr>
+		<th>Column</th>
+		<th>DF1 Missing %</th>
+		<th>DF2 Missing %</th>
+		<th>DF1 Zero %</th>
+		<th>DF2 Zero %</th>
+		<th>DF1 Mean %</th>
+		<th>DF2 Mean %</th>
+		<th>DF1 Min %</th>
+		<th>DF2 Min %</th>
+		<th>DF1 Max %</th>
+		<th>DF2 Max %</th>
+		<th>KS P-Value</th>
+	  </thead>
+	  <tbody class='ui-widget-content'>
+		</tr>
+		{% for index, row in comp['num_stats'].iterrows() %}
+			<tr>
+			<td>{{ row['variable'] }}</td>
+			<td>{{ '{:.4f}'.format(row['missing_df1']) }}</td>
+			<td>{{ '{:.4f}'.format(row['missing_df2']) }}</td>
+			<td>{{ '{:.4f}'.format(row['zero_df1']) }}</td>
+			<td>{{ '{:.4f}'.format(row['zero_df2']) }}</td>
+			<td>{{ '{:.4f}'.format(row['mean_df1']) }}</td>
+			<td>{{ '{:.4f}'.format(row['mean_df2']) }}</td>
+			<td>{{ '{:.4f}'.format(row['min_df1']) }}</td>
+			<td>{{ '{:.4f}'.format(row['min_df2']) }}</td>
+			<td>{{ '{:.4f}'.format(row['max_df1']) }}</td>
+			<td>{{ '{:.4f}'.format(row['max_df2']) }}</td>
+			<td>{{ '{:.4f}'.format(row['ks_pval']) }}</td>
+			</tr>
+		{% endfor %}
+	  </tbody>
+	</table>
+	</div>
+
+	<div class="container" id="tabs-5">
+	  <div class="fixed">
+
+		{% for n in comp['nplots'].keys() %}
+		  <div>
+			<button class="button" onclick="showPlotsN('{{ n }}')">{{ n, '{:.4f}'.format(comp['nplots'][n][1]) }}</button>
+		  </div>
+		{% endfor %}
+	  </div>
+
+	  <div class="flex-item">
+		{% for n in comp['nplots'].keys() %}
+		  <div style="display:none;" id="{{ n }}">
+			<img src="{{ comp['nplots_bytes'][n] }}">
+		  </div>
+		{% endfor %}
+	  </div>
+	</div>
+
+	<div class="container" id="tabs-6">
+		<h2>Radio Group</h2>
+		  <fieldset>
+		    <legend>Select a Location: </legend>
+		    <label for="radio-1">New York</label>
+		    <input type="radio" name="radio-1" id="radio-1">
+		    <label for="radio-2">Paris</label>
+		    <input type="radio" name="radio-1" id="radio-2">
+		    <label for="radio-3">London</label>
+		    <input type="radio" name="radio-1" id="radio-3">
+		</fieldset>
+	</div>
+
+	<div class="container" id="tabs-7">
+
+		<div id="accordion">
+
+			{% for n in comp['nplots'].keys() %}
+			  <h3>{{ n, '{:.4f}'.format(comp['nplots'][n][1]) }}</h3>
+			  <div>
+			    <p>
+					<img src="{{ comp['nplots_bytes'][n] }}">			    
+				</p>
+			  </div>
+			{% endfor %}
+
+		</div>
+	</div>
+
+</div>
+
+<script src="external/jquery/jquery.js"></script>
+<script src="jquery-ui.js"></script>
+<script>
+
+$( "#accordion" ).accordion();
+
+
+
+var availableTags = [
+	"ActionScript",
+	"AppleScript",
+	"Asp",
+	"BASIC",
+	"C",
+	"C++",
+	"Clojure",
+	"COBOL",
+	"ColdFusion",
+	"Erlang",
+	"Fortran",
+	"Groovy",
+	"Haskell",
+	"Java",
+	"JavaScript",
+	"Lisp",
+	"Perl",
+	"PHP",
+	"Python",
+	"Ruby",
+	"Scala",
+	"Scheme"
+];
+$( "#autocomplete" ).autocomplete({
+	source: availableTags
+});
+
+
+
+$( "#button" ).button();
+$( "#button-icon" ).button({
+	icon: "ui-icon-gear",
+	showLabel: false
+});
+
+
+
+$( "#radioset" ).buttonset();
+
+
+
+$( "#controlgroup" ).controlgroup();
+
+
+
+$( "#tabs" ).tabs();
+
+
+
+$( "#dialog" ).dialog({
+	autoOpen: false,
+	width: 400,
+	buttons: [
+		{
+			text: "Ok",
+			click: function() {
+				$( this ).dialog( "close" );
+			}
+		},
+		{
+			text: "Cancel",
+			click: function() {
+				$( this ).dialog( "close" );
+			}
+		}
+	]
+});
+
+// Link to open the dialog
+$( "#dialog-link" ).click(function( event ) {
+	$( "#dialog" ).dialog( "open" );
+	event.preventDefault();
+});
+
+
+
+$( "#datepicker" ).datepicker({
+	inline: true
+});
+
+
+
+$( "#slider" ).slider({
+	range: true,
+	values: [ 17, 67 ]
+});
+
+
+
+$( "#progressbar" ).progressbar({
+	value: 20
+});
+
+
+
+$( "#spinner" ).spinner();
+
+
+
+$( "#menu" ).menu();
+
+
+
+$( "#tooltip" ).tooltip();
+
+
+
+$( "#selectmenu" ).selectmenu();
+
+
+// Hover states on the static widgets
+$( "#dialog-link, #icons li" ).hover(
+	function() {
+		$( this ).addClass( "ui-state-hover" );
+	},
+	function() {
+		$( this ).removeClass( "ui-state-hover" );
+	}
+);
+
+</script>
+</body>
+</html>
