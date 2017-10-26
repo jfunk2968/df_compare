@@ -5,7 +5,6 @@ from scipy.stats import chisquare
 from scipy.stats import ks_2samp
 from shapely.geometry import Polygon
 from descartes.patch import PolygonPatch
-from random import sample
 
 try:
     from StringIO import BytesIO
@@ -19,7 +18,8 @@ except ImportError:
     
 import base64
 
-def df_comp(df1, df2, id1=None, id2=None, max_cats=20, verbose=0):
+
+def df_comp(df1, df2, id1=None, id2=None, max_cats=20, verbose=0, df1_name="DF-1", df2_name="DF-2"):
 	"""Compares 2 pandas dataframes for differences
 	"""
 
@@ -75,9 +75,9 @@ def df_comp(df1, df2, id1=None, id2=None, max_cats=20, verbose=0):
 	cstats['pct_mode_df1'] = cstats['variable'].apply(lambda x: np.mean(df1[x] == df1[x].value_counts().index[0]))
 	cstats['pct_mode_df2'] = cstats['variable'].apply(lambda x: np.mean(df2[x] == df2[x].value_counts().index[0]))
 
-	cstats['chisq_pval'] = cstats['variable'].apply(lambda x: chisq(df1[x],df2[x]))
+	cstats['chisq_pval'], cstats['chisq_outcome'] = zip(*cstats['variable'].apply(lambda x: chisq(df1[x],df2[x])))
 
-	cplots = {k: cat_comp_plot(df1[k], df2[k], name=k+' Value') for k in 
+	cplots = {k: cat_comp_plot(df1[k], df2[k], name=k+' Value', n1_name=df1_name, n2_name=df2_name) for k in 
 		cstats['variable'].loc[((cstats['nunique_df1'] <  max_cats) &
 								(cstats['nunique_df2'] <  max_cats))]}
 	cplots_bytes = {k: image_to_Bytes(cplots[k][2]) for k in cplots.keys()}
@@ -104,53 +104,53 @@ def df_comp(df1, df2, id1=None, id2=None, max_cats=20, verbose=0):
 
 	nstats['ks_pval'] = nstats['variable'].apply(lambda x: ks_2samp(df1[x],df2[x])[1])
 
-	nplots = {k: num_comp_plot(df1[k], df2[k], name=k+' Range') for k in cols.loc[((cols['diff']==False) & (cols['df1_type']!='object'))].index}
+	nplots = {k: num_comp_plot(df1[k], df2[k], norm=False, name=k, n1_name=df1_name, n2_name=df2_name) for k in cols.loc[((cols['diff']==False) & (cols['df1_type']!='object'))].index}
 	nplots_bytes = {k: image_to_Bytes(nplots[k][2]) for k in nplots.keys()}
 
 
 	# optionaly print results
 	if verbose>0:
-		print "-------------------------------------------------------------------"
-		print 
-		print "VARIABLE OVERLAP COMPARISON"
-		print
-		print cols
-		print
+		print("-------------------------------------------------------------------")
+		print()
+		print("VARIABLE OVERLAP COMPARISON")
+		print()
+		print(cols)
+		print()
 		if ((id1!=None) or (id2!=None)):
 			if ((id1!=None) and (id2!=None)):
-				print "-------------------------------------------------------------------"
-				print 
-				print "OPTIONAL ID VARIABLE COMPARISON"
-				print
-				print "id1 Unique  : ", ids['id1_uniq']
-				print "id2 Unique  : ", ids['id2_uniq']
-				print "id1 Only    : ", ids['id1_only']
-				print "id2 Only    : ", ids['id2_only']
-				print "Both        : ", ids['both']
-				print
+				print("-------------------------------------------------------------------")
+				print()
+				print("OPTIONAL ID VARIABLE COMPARISON")
+				print()
+				print("id1 Unique  : ", ids['id1_uniq'])
+				print("id2 Unique  : ", ids['id2_uniq'])
+				print("id1 Only    : ", ids['id1_only'])
+				print("id2 Only    : ", ids['id2_only'])
+				print("Both        : ", ids['both'])
+				print()
 			else:
-				print "-------------------------------------------------------------------"
-				print 
-				print "WARNING - only one ID variale ... comparison not run "
-				print
-		print "-------------------------------------------------------------------"
-		print 
-		print "CATEGORICAL VARIABLE COMPARISON STATS (top 25 vars)"
-		print
+				print("-------------------------------------------------------------------")
+				print() 
+				print("WARNING - only one ID variale ... comparison not run ")
+				print()
+		print("-------------------------------------------------------------------")
+		print() 
+		print("CATEGORICAL VARIABLE COMPARISON STATS (top 25 vars)")
+		print()
 		if len(cstats)<25:
 			c_rows_print=len(cstats)
 		else:
 			c_rows_print=25
-		print cstats[['variable','chisq_pval']].sort_values('chisq_pval').reset_index(drop=True)[0:c_rows_print]
-		print "-------------------------------------------------------------------"
-		print 
-		print "NUMERICAL VARIABLE COMPARISON STATS (top 25 vars)"
-		print
+		print(cstats[['variable','chisq_pval', 'chisq_outcome']].sort_values('chisq_pval').reset_index(drop=True)[0:c_rows_print])
+		print("-------------------------------------------------------------------")
+		print() 
+		print("NUMERICAL VARIABLE COMPARISON STATS (top 25 vars)")
+		print()
 		if len(nstats)<25:
 			n_rows_print=len(nstats)
 		else:
 			n_rows_print=25
-		print nstats[['variable','ks_pval']].sort_values('ks_pval').reset_index(drop=True)[0:n_rows_print]
+		print(nstats[['variable','ks_pval']].sort_values('ks_pval').reset_index(drop=True)[0:n_rows_print])
 
 	return {'columns': cols,  
 			'char_stats': cstats,
@@ -163,11 +163,12 @@ def df_comp(df1, df2, id1=None, id2=None, max_cats=20, verbose=0):
 
 #  add a print function for variable distribution comps ... one for num and on for cat
 
-def num_comp_plot(n1, n2, sampsize=1000, norm=True, name="Variable"):
+
+def num_comp_plot(n1, n2, sampsize=1000, norm=True, name="Variable", n1_name="DF-1", n2_name="DF-2"):
     """Create ecdf plot comparing two numeric series distributions
     """
-    s1 = np.array(sample(n1,min(len(n1),sampsize)))
-    s2 = np.array(sample(n2,min(len(n2),sampsize)))
+    s1 = np.array(n1.sample(min(len(n1),sampsize)))
+    s2 = np.array(n2.sample(min(len(n2),sampsize)))
 
     lower = float(min(min(n1),min(n2)))
     upper = float(max(max(n1),max(n2)))
@@ -182,29 +183,36 @@ def num_comp_plot(n1, n2, sampsize=1000, norm=True, name="Variable"):
     b.reverse()
     a.extend(b)
     a.append(a[0])
-
     polygon = Polygon(a)
 
-    fig = plt.figure(figsize=(9,6))
+    fig = plt.figure(figsize=(15,10))
     ax = fig.add_subplot(111)
-    patch = PolygonPatch(polygon, facecolor='lightgray', edgecolor='lightgray', alpha=0.5, zorder=2)
+    patch = PolygonPatch(polygon, facecolor='gray', edgecolor='lightgray', alpha=0.5, zorder=2)
     ax.add_patch(patch)
-    plt.plot(np.sort(s1), np.linspace(0, 1, len(s1), endpoint=False))
-    plt.plot(np.sort(s2), np.linspace(0, 1, len(s2), endpoint=False))
-    plt.ylabel("Empirical Cumulative Density")
-    plt.xlabel(name)
+    plt.plot(np.sort(s1), np.linspace(0, 1, len(s1), endpoint=False), label=n1_name, color='red', linewidth=3)
+    plt.plot(np.sort(s2), np.linspace(0, 1, len(s2), endpoint=False), label=n2_name, color='blue', linewidth=3)
+    plt.title("Empirical Cumulative Density Comparison", fontsize=24, fontweight='bold')
+    plt.ylabel("Cumulative Density", fontsize=20)
+    plt.xlabel(name, fontsize=20)
+    plt.tick_params(axis='both', which='major', labelsize=16)
+    plt.legend(loc=0, fontsize=20)
 
     return name, polygon.area, fig
 
 
-
-def cat_comp_plot(c1, c2, sampsize=1000, norm=True, name="Variable"):
+def cat_comp_plot(c1, c2, sampsize=1000, norm=True, name="Variable", n1_name="DF-1", n2_name="DF-2"):
     """Create bar chart comparing two categorical series distributions
     """
+    footnote=""
+
     vc1 = c1.value_counts(normalize=True,dropna=False)
     vc2 = c2.value_counts(normalize=True,dropna=False)
 
     df = pd.concat([vc1,vc2],axis=1).reset_index()
+    if len(df)>20:
+    	footnote="* For clarity only the top 20 most common values (of the "+str(len(df))+" unique values that exist in the data) are shown here"
+    	df = df[0:19]
+
     df.columns = ['value','c1','c2']
     df['value'].fillna('NAN',inplace=True)
     df['c1'].fillna(0,inplace=True)
@@ -214,15 +222,22 @@ def cat_comp_plot(c1, c2, sampsize=1000, norm=True, name="Variable"):
 
     df.sort_values('sort',inplace=True)
     df.reset_index(inplace=True,drop=True)
-    fig = plt.figure()
+
+    fig = plt.figure(figsize=(15,10))
     ax = fig.add_subplot(111)
-    ax.barh(df.index,df['c1'],.3,color='b',align='center')
-    ax.barh(df.index+.3,df['c2'],.3,color='r',align='center')
+    ax.barh(df.index-.15, df['c1'], .3, color='b', edgecolor='gray', align='center', label=n1_name)
+    ax.barh(df.index+.15, df['c2'], .3, color='r', edgecolor='gray', align='center', label=n2_name)
     ax.set_yticks(df.index)
-    ax.set_yticklabels(df['value'], rotation=40, ha='right')
+    ax.set_yticklabels(df['value'], ha='right')
     
-    plt.ylabel(name)
-    plt.xlabel("Value Percent")
+    plt.ylabel(name+" Value", fontsize=20)
+    plt.xlabel("Percent", fontsize=20)
+    plt.title("Empirical Distribution Comparison", fontsize=24, fontweight='bold')
+    plt.tick_params(axis='both', which='major', labelsize=16)
+    plt.legend(loc=0, fontsize=20)
+
+    plt.figtext(0.1, 0.01, footnote, horizontalalignment='left', fontsize=14)
+
     return df, sum(df['diff'])/2.0, fig
 
 
@@ -232,21 +247,21 @@ def chisq(base,compare):
 
 	if set(base.unique()) != set(compare.unique()):
 		#print "Series DO NOT Have Same Value Sets"
-		return "NA - diff values"
+		return (0, "NA - diff values")
 
 	elif base.nunique()==1:
-		return "NA - only 1 value"
+		return (0, "NA - only 1 value")
 
 	else:
 		expected = base.value_counts(normalize=True).sort_index() * len(compare)
 		actual   = compare.value_counts().sort_index()
 
 		if min(expected.append(actual)) <= 5:
-			return "NA - small bin sizes"
+			return (0, "NA - small bin sizes")
 
 		else:
 			ch = chisquare(f_obs=actual,f_exp=expected)
-			return ch[1]
+			return (ch[1], "Valid Score")
 
     
 def image_to_Bytes(img):        
