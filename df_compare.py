@@ -204,28 +204,28 @@ def num_comp_plot(n1, n2, sampsize=1000, norm=True, name="Variable", n1_name="DF
     return name, polygon.area, fig
 
 
-def cat_comp_plot(c1, c2, sampsize=1000, norm=True, name="Variable", n1_name="DF-1", n2_name="DF-2"):
+def cat_comp_plot(c1, c2, sampsize=1000, max_plot_values=20, name="Variable", n1_name="DF-1", n2_name="DF-2"):
     """Create bar chart comparing two categorical series distributions
     """
     footnote=""
 
-    vc1 = c1.value_counts(normalize=True,dropna=False)
-    vc2 = c2.value_counts(normalize=True,dropna=False)
-
-    df = pd.concat([vc1,vc2],axis=1).reset_index()
-    if len(df)>20:
-    	footnote="* For clarity only the top 20 most common values (of the "+str(len(df))+" unique values that exist in the data) are shown here"
-    	df = df[0:19]
-
-    df.columns = ['value','c1','c2']
-    df['value'].fillna('NAN',inplace=True)
-    df['c1'].fillna(0,inplace=True)
-    df['c2'].fillna(0,inplace=True)
+    vc1 = c1.value_counts(normalize=True, dropna=False)
+    vc2 = c2.value_counts(normalize=True, dropna=False)
+    df = pd.concat([vc1,vc2], axis=1).reset_index()
+    df.columns = ['value', 'c1', 'c2']
+    df['value'].fillna('NAN', inplace=True)
+    df['c1'].fillna(0, inplace=True)
+    df['c2'].fillna(0, inplace=True)
     df['diff'] = abs(df['c1'] - df['c2'])
     df['sort'] = df['c1'] + df['c2']
+    df.sort_values('sort', inplace=True)
+    df.reset_index(inplace=True, drop=True)
 
-    df.sort_values('sort',inplace=True)
-    df.reset_index(inplace=True,drop=True)
+    rel_diff = sum(df['diff'])/2.0
+
+    if len(df)>max_plot_values:
+    	footnote="* For clarity only the top "str(max_plot_values)+" most common values (of the "+str(len(df))+" unique values that exist in the data) are shown here"
+    	df = df[0:max_plot_values-1]
 
     fig = plt.figure(figsize=(15,10))
     ax = fig.add_subplot(111)
@@ -242,7 +242,7 @@ def cat_comp_plot(c1, c2, sampsize=1000, norm=True, name="Variable", n1_name="DF
 
     plt.figtext(0.1, 0.01, footnote, horizontalalignment='left', fontsize=14)
 
-    return df, sum(df['diff'])/2.0, fig
+    return df, rel_diff, fig
 
 
 def chisq(base,compare):
