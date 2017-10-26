@@ -34,7 +34,7 @@
 	<div id="tabs-0">Summary report TBD...</div>
 
 	<div id="tabs-1">
-	<table id="clean_table" class="display">
+	<table id="clean_table_1" class="display">
 	  <thead>
 		<tr>
 		<th>Column</th>
@@ -59,7 +59,7 @@
 	</div>
 
 	<div id="tabs-2">
-	<table id="clean_table" class="display">
+	<table id="clean_table_2" class="display">
 	  <thead>
 		<tr>
 		<th>Column</th>
@@ -99,7 +99,7 @@
 	</div>
 
 	<div id="tabs-4">
-	<table id="clean_table" class="display">
+	<table id="clean_table_3" class="display">
 	  <thead>
 		<tr>
 		<th>Column</th>
@@ -159,7 +159,9 @@
 <script>
 
 $(document).ready( function () {
-    $('#clean_table:nth-child(1n)').DataTable();
+    $('#clean_table_1').DataTable({ "order": [[ 0, "asc" ]] });
+    $('#clean_table_2').DataTable({ "order": [[ 5, "desc" ]] });
+    $('#clean_table_3').DataTable({ "order": [[ 11, "desc" ]] });
 } );
 
 
