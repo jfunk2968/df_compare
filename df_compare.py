@@ -75,12 +75,14 @@ def df_comp(df1, df2, id1=None, id2=None, max_cats=20, verbose=0, df1_name="DF-1
 	cstats['pct_mode_df1'] = cstats['variable'].apply(lambda x: np.mean(df1[x] == df1[x].value_counts().index[0]))
 	cstats['pct_mode_df2'] = cstats['variable'].apply(lambda x: np.mean(df2[x] == df2[x].value_counts().index[0]))
 
-	cstats['chisq_pval'], cstats['chisq_outcome'] = zip(*cstats['variable'].apply(lambda x: chisq(df1[x],df2[x])))
+	#cstats['chisq_pval'], cstats['chisq_outcome'] = zip(*cstats['variable'].apply(lambda x: chisq(df1[x],df2[x])))
 
 	cplots = {k: cat_comp_plot(df1[k], df2[k], name=k+' Value', n1_name=df1_name, n2_name=df2_name) for k in 
 		cstats['variable'].loc[((cstats['nunique_df1'] <  max_cats) &
 								(cstats['nunique_df2'] <  max_cats))]}
 	cplots_bytes = {k: image_to_Bytes(cplots[k][2]) for k in cplots.keys()}
+
+	cstats['relative_diff'] = cstats['variable'].apply(lambda x: cplots.get(x, (0, -99, 0))[1])
 
 
 	# Build summary metric df for Numerical variables	
@@ -106,6 +108,8 @@ def df_comp(df1, df2, id1=None, id2=None, max_cats=20, verbose=0, df1_name="DF-1
 
 	nplots = {k: num_comp_plot(df1[k], df2[k], norm=False, name=k, n1_name=df1_name, n2_name=df2_name) for k in cols.loc[((cols['diff']==False) & (cols['df1_type']!='object'))].index}
 	nplots_bytes = {k: image_to_Bytes(nplots[k][2]) for k in nplots.keys()}
+
+	nstats['relative_diff'] = nstats['variable'].apply(lambda x: nplots.get(x, (0, -99, 0))[1])
 
 
 	# optionaly print results
@@ -141,7 +145,7 @@ def df_comp(df1, df2, id1=None, id2=None, max_cats=20, verbose=0, df1_name="DF-1
 			c_rows_print=len(cstats)
 		else:
 			c_rows_print=25
-		print(cstats[['variable','chisq_pval', 'chisq_outcome']].sort_values('chisq_pval').reset_index(drop=True)[0:c_rows_print])
+		#print(cstats[['variable','chisq_pval', 'chisq_outcome']].sort_values('chisq_pval').reset_index(drop=True)[0:c_rows_print])
 		print("-------------------------------------------------------------------")
 		print() 
 		print("NUMERICAL VARIABLE COMPARISON STATS (top 25 vars)")

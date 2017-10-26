@@ -67,7 +67,7 @@
 		<th>DF2 Missing %</th>
 		<th>DF1 Mode %</th>
 		<th>DF2 Mode %</th>
-		<th>Chi-Square P-Value</th>
+		<th>Relative Difference</th>
 	    </tr>
 	  </thead>
 	  <tbody>
@@ -78,7 +78,7 @@
 			<td>{{ '{:.4f}'.format(row['missing_df2']) }}</td>
 			<td>{{ '{:.4f}'.format(row['pct_mode_df1']) }}</td>
 			<td>{{ '{:.4f}'.format(row['pct_mode_df2']) }}</td>
-			<td>{{ row['chisq_pval'] }}</td>
+			<td>{{ '{:.4f}'.format(row['relative_diff']) }}</td>
 			</tr>
 		{% endfor %}
 	  </tbody>
@@ -113,7 +113,7 @@
 		<th>DF2 Min %</th>
 		<th>DF1 Max %</th>
 		<th>DF2 Max %</th>
-		<th>KS P-Value</th>
+		<th>Relative Diff</th>
 	    </tr>
 	  </thead>
 	  <tbody>
@@ -130,7 +130,7 @@
 			<td>{{ '{:.4f}'.format(row['min_df2']) }}</td>
 			<td>{{ '{:.4f}'.format(row['max_df1']) }}</td>
 			<td>{{ '{:.4f}'.format(row['max_df2']) }}</td>
-			<td>{{ '{:.4f}'.format(row['ks_pval']) }}</td>
+			<td>{{ '{:.4f}'.format(row['relative_diff']) }}</td>
 			</tr>
 		{% endfor %}
 	  </tbody>
